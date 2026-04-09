@@ -10,16 +10,16 @@ public class UserEventConsumer {
 
     @KafkaListener(topics = "user-created", groupId = "user-service-group")
     public void consumeUserCreated(String message) {
-        log.info("Event received from 'user-created': {}", message);
+        log.info("📨 EVENTO RECIBIDO (user-created): {}", message);
     }
 
     @KafkaListener(topics = "user-deleted", groupId = "user-service-group")
     public void consumeUserDeleted(String message) {
-        log.info("Event received from 'user-deleted': {}", message);
+        log.info("📨 EVENTO RECIBIDO (user-deleted): {}", message);
     }
 
     @KafkaListener(topics = "user-updated", groupId = "user-service-group")
     public void consumeUserUpdated(String message) {
-        log.info("Event received from 'user-updated': {}", message);
+        log.info("📨 EVENTO RECIBIDO (user-updated): {}", message);
     }
 }

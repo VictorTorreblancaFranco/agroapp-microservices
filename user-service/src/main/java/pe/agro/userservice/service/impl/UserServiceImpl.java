@@ -2,14 +2,12 @@ package pe.agro.userservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pe.agro.userservice.dto.UserRequestDTO;
 import pe.agro.userservice.dto.UserResponseDTO;
 import pe.agro.userservice.dto.UserUpdateDTO;
 import pe.agro.userservice.mapper.UserMapper;
 import pe.agro.userservice.repository.UserRepository;
-import pe.agro.userservice.service.EventPublisherService;
 import pe.agro.userservice.service.UserService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,9 +20,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-    private final EventPublisherService eventPublisherService;
 
     @Override
     public Mono<UserResponseDTO> save(UserRequestDTO request) {
@@ -34,16 +30,11 @@ public class UserServiceImpl implements UserService {
                 .then(generateUsername(request.getFirstName(), request.getLastName()))
                 .flatMap(username -> {
                     String defaultPassword = "agroapp123";
-                    String encodedPassword = passwordEncoder.encode(defaultPassword);
-                    var user = userMapper.toEntity(request, username, encodedPassword);
+                    var user = userMapper.toEntity(request, username, defaultPassword);
                     return userRepository.save(user);
                 })
                 .map(userMapper::toResponseDTO)
-                .doOnSuccess(response -> {
-                    log.info("User saved successfully with id: {}, username: {}, password: agroapp123",
-                            response.getId(), response.getUsername());
-                    eventPublisherService.publishUserCreated(response.getId(), response.getEmail(), response.getUsername());
-                })
+                .doOnSuccess(response -> log.info("User saved successfully with id: {}, username: {}", response.getId(), response.getUsername()))
                 .doOnError(error -> log.error("Error saving user: {}", error.getMessage()));
     }
 
@@ -77,32 +68,17 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findById(request.getId())
                 .switchIfEmpty(Mono.error(new RuntimeException("User not found with id: " + request.getId())))
-                .map(existing -> {
-                    String encodedPassword = null;
-                    if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-                        encodedPassword = passwordEncoder.encode(request.getPassword());
-                    }
-                    return userMapper.toEntity(request, existing, encodedPassword);
-                })
+                .map(existing -> userMapper.toEntity(request, existing))
                 .flatMap(userRepository::save)
                 .map(userMapper::toResponseDTO)
-                .doOnSuccess(response -> {
-                    log.info("User updated successfully: {}", response.getId());
-                    eventPublisherService.publishUserUpdated(response.getId(), response.getEmail());
-                })
+                .doOnSuccess(response -> log.info("User updated successfully: {}", response.getId()))
                 .doOnError(error -> log.error("Error updating user: {}", error.getMessage()));
     }
 
     @Override
     public Mono<Void> deleteById(Long id) {
         log.info("Soft deleting user with id: {}", id);
-        return userRepository.softDeleteById(id, "system")
-                .doOnSuccess(rows -> {
-                    if (rows > 0) {
-                        eventPublisherService.publishUserDeleted(id);
-                    }
-                })
-                .then();
+        return userRepository.softDeleteById(id, "system").then();
     }
 
     @Override
@@ -194,7 +170,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<Void> changePassword(Long id, String newPassword) {
         log.info("Changing password for user: {}", id);
-        return userRepository.changePassword(id, passwordEncoder.encode(newPassword)).then();
+        return userRepository.changePassword(id, newPassword).then();
     }
 
     @Override

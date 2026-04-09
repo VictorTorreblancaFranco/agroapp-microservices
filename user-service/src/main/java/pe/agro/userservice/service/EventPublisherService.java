@@ -16,18 +16,18 @@ public class EventPublisherService {
         String message = String.format("{\"event\":\"USER_CREATED\",\"userId\":%d,\"email\":\"%s\",\"username\":\"%s\"}",
                 userId, email, username);
         kafkaTemplate.send("user-created", userId.toString(), message);
-        log.info("Event published to 'user-created': {}", message);
+        log.info("📢 Evento publicado en 'user-created': {}", message);
     }
 
     public void publishUserDeleted(Long userId) {
         String message = String.format("{\"event\":\"USER_DELETED\",\"userId\":%d}", userId);
         kafkaTemplate.send("user-deleted", userId.toString(), message);
-        log.info("Event published to 'user-deleted': {}", message);
+        log.info("📢 Evento publicado en 'user-deleted': {}", message);
     }
 
     public void publishUserUpdated(Long userId, String email) {
         String message = String.format("{\"event\":\"USER_UPDATED\",\"userId\":%d,\"email\":\"%s\"}", userId, email);
         kafkaTemplate.send("user-updated", userId.toString(), message);
-        log.info("Event published to 'user-updated': {}", message);
+        log.info("📢 Evento publicado en 'user-updated': {}", message);
     }
 }

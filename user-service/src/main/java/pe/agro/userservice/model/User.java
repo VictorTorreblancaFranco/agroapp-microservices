@@ -7,21 +7,15 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table("users")
-public class User implements UserDetails {
+public class User {
 
     @Id
     private Long id;
@@ -117,34 +111,4 @@ public class User implements UserDetails {
 
     @Column("last_password_reset_date")
     private LocalDateTime lastPasswordResetDate;
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Arrays.stream(roles.split(","))
-                .map(role -> new SimpleGrantedAuthority(role.trim()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return accountNonExpired != null ? accountNonExpired : true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
-            return false;
-        }
-        return accountNonLocked != null ? accountNonLocked : true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return credentialsNonExpired != null ? credentialsNonExpired : true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isActive != null ? isActive : true;
-    }
 }

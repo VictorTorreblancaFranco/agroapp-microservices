@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: 8081
 
 spring:
   application:
@@ -15,10 +15,6 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
-
-jwt:
-  secret: agroAppSuperSecretKey2024With32CharactersOrMore123456
-  expiration: 86400000
 
 logging:
   level:

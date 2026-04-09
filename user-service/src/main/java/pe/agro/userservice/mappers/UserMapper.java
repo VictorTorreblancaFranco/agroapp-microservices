@@ -11,7 +11,7 @@ import java.util.UUID;
 @Component
 public class UserMapper {
 
-    public User toEntity(UserRequestDTO request, String username, String encodedPassword) {
+    public User toEntity(UserRequestDTO request, String username, String plainPassword) {
         if (request == null) {
             return null;
         }
@@ -24,15 +24,12 @@ public class UserMapper {
                 .documentType(request.getDocumentType())
                 .documentNumber(request.getDocumentNumber())
                 .email(request.getEmail())
-                .password(encodedPassword)
+                .password(plainPassword)
                 .phone(request.getPhone())
                 .roles("ROLE_USER")
                 .isActive(true)
                 .isEmailVerified(false)
                 .failedAttempts(0)
-                .accountNonLocked(true)
-                .accountNonExpired(true)
-                .credentialsNonExpired(true)
                 .version(1)
                 .createdAt(LocalDateTime.now())
                 .verificationToken(UUID.randomUUID().toString())
@@ -40,7 +37,7 @@ public class UserMapper {
                 .build();
     }
 
-    public User toEntity(UserUpdateDTO request, User existing, String encodedPassword) {
+    public User toEntity(UserUpdateDTO request, User existing) {
         if (request == null || existing == null) {
             return existing;
         }
@@ -54,7 +51,7 @@ public class UserMapper {
         existing.setPhone(request.getPhone());
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            existing.setPassword(encodedPassword);
+            existing.setPassword(request.getPassword());
         }
 
         return existing;

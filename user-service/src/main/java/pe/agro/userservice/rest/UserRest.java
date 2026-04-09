@@ -3,7 +3,6 @@ package pe.agro.userservice.rest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pe.agro.userservice.dto.UserRequestDTO;
 import pe.agro.userservice.dto.UserResponseDTO;
@@ -21,30 +20,25 @@ public class UserRest {
 
     private final UserService userService;
 
-    @PostMapping("/save")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<UserResponseDTO> save(@Valid @RequestBody UserRequestDTO request) {
         return userService.save(request);
     }
 
-    @PutMapping("/update")
+    @PutMapping
     @ResponseStatus(HttpStatus.OK)
     public Mono<UserResponseDTO> update(@Valid @RequestBody UserUpdateDTO request) {
         return userService.update(request);
     }
 
-    @PatchMapping("/delete/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<Map<String, Object>> delete(@PathVariable Long id) {
-        return userService.deleteById(id)
-                .then(Mono.just(Map.of(
-                        "message", "User deactivated successfully",
-                        "id", id,
-                        "status", "SUCCESS"
-                )));
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> delete(@PathVariable Long id) {
+        return userService.deleteById(id);
     }
 
-    @PatchMapping("/restore/{id}")
+    @PatchMapping("/{id}/restore")
     @ResponseStatus(HttpStatus.OK)
     public Mono<UserResponseDTO> restore(@PathVariable Long id) {
         return userService.restore(id);
@@ -56,10 +50,9 @@ public class UserRest {
         return userService.findById(id);
     }
 
-    @GetMapping("/me")
+    @GetMapping("/username/{username}")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<UserResponseDTO> getCurrentUser(Authentication authentication) {
-        String username = authentication.getName();
+    public Mono<UserResponseDTO> findByUsername(@PathVariable String username) {
         return userService.findByUsername(username);
     }
 
@@ -69,13 +62,13 @@ public class UserRest {
         return userService.findAll();
     }
 
-    @GetMapping("/status/active")
+    @GetMapping("/active")
     @ResponseStatus(HttpStatus.OK)
     public Flux<UserResponseDTO> findAllActive() {
         return userService.findAllActive();
     }
 
-    @GetMapping("/status/inactive")
+    @GetMapping("/inactive")
     @ResponseStatus(HttpStatus.OK)
     public Flux<UserResponseDTO> findAllInactive() {
         return userService.findAllInactive();
@@ -85,12 +78,6 @@ public class UserRest {
     @ResponseStatus(HttpStatus.OK)
     public Mono<UserResponseDTO> findByEmail(@PathVariable String email) {
         return userService.findByEmail(email);
-    }
-
-    @PostMapping("/verify/{token}")
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<Boolean> verifyEmail(@PathVariable String token) {
-        return userService.verifyEmail(token);
     }
 
     @GetMapping("/check-email/{email}")
@@ -105,9 +92,9 @@ public class UserRest {
         return userService.isPhoneAvailable(phone);
     }
 
-    @PutMapping("/change-role/{userId}")
+    @PutMapping("/{id}/role")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<UserResponseDTO> changeRole(@PathVariable Long userId, @RequestParam String role) {
-        return userService.changeRole(userId, role);
+    public Mono<UserResponseDTO> changeRole(@PathVariable Long id, @RequestParam String role) {
+        return userService.changeRole(id, role);
     }
 }
