@@ -1,3 +1,25 @@
+server:
+  port: 8085
+
 spring:
   application:
     name: user-service
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/mi_base
+    username: admin
+    password: 1234
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: user-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+
+jwt:
+  secret: agroAppSuperSecretKey2024With32CharactersOrMore123456
+  expiration: 86400000
+
+logging:
+  level:
+    pe.agro.userservice: DEBUG
