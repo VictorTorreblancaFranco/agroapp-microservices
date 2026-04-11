@@ -1,0 +1,48 @@
+services:
+  user-service:
+    build: ./user-service
+    container_name: agroapp-user-service
+    environment:
+      USER_SERVICE_PORT: 8081
+      DATABASE_URL: r2dbc:postgresql://host.docker.internal:5432/mi_base
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 1234
+      KAFKA_BOOTSTRAP_SERVERS: host.docker.internal:9092
+      LOG_LEVEL: INFO
+    ports:
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  crop-service:
+    build: ./crop-service
+    container_name: agroapp-crop-service
+    environment:
+      CROP_SERVICE_PORT: 8082
+      DATABASE_URL: r2dbc:postgresql://host.docker.internal:5432/mi_base
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 1234
+      KAFKA_BOOTSTRAP_SERVERS: host.docker.internal:9092
+      LOG_LEVEL: INFO
+    ports:
+      - "8082:8082"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: agroapp-gateway
+    environment:
+      SERVER_PORT: 8080
+      USER_SERVICE_URL: http://user-service:8081
+      CROP_SERVICE_URL: http://crop-service:8082
+      JWT_SECRET: agroAppSuperSecretKey2024With32CharactersOrMore123456
+      JWT_EXPIRATION: 86400000
+      LOG_LEVEL: INFO
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - crop-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
