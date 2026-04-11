@@ -1,15 +1,15 @@
 server:
-  port: 8082
+  port: ${CROP_SERVICE_PORT:8082}
 
 spring:
   application:
     name: crop-service
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/mi_base
-    username: admin
-    password: 1234
+    url: ${DATABASE_URL:r2dbc:postgresql://localhost:5432/mi_base}
+    username: ${DATABASE_USER:admin}
+    password: ${DATABASE_PASSWORD:1234}
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: crop-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -18,4 +18,13 @@ spring:
 
 logging:
   level:
-    pe.agro.cropservice: DEBUG
+    pe.agro.cropservice: ${LOG_LEVEL:DEBUG}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

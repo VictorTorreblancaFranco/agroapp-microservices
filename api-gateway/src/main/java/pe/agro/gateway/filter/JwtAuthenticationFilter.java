@@ -21,6 +21,7 @@ import pe.agro.gateway.security.JwtUtil;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -44,21 +45,21 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
+            String requestId = UUID.randomUUID().toString();
             String path = exchange.getRequest().getURI().getPath();
 
-            log.info("=== NUEVA PETICIÓN ===");
-            log.info("Path: {}", path);
-            log.info("Method: {}", exchange.getRequest().getMethod());
+            log.info("[{}] === NUEVA PETICIÓN ===", requestId);
+            log.info("[{}] Path: {}", requestId, path);
 
             // RUTA DE LOGIN
             if (LOGIN_PATH.equals(path)) {
-                log.info("Procesando login...");
-                return handleLogin(exchange, chain);
+                log.info("[{}] Procesando login...", requestId);
+                return handleLogin(exchange, chain, requestId);
             }
 
             // RUTAS PÚBLICAS
             if (path.startsWith(REGISTER_PATH)) {
-                log.info("Ruta pública: {}", path);
+                log.info("[{}] Ruta pública: {}", requestId, path);
                 return chain.filter(exchange);
             }
 
@@ -66,7 +67,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                log.warn("Token no encontrado para: {}", path);
+                log.warn("[{}] Token no encontrado para: {}", requestId, path);
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
@@ -74,49 +75,52 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             String token = authHeader.substring(7);
 
             if (!jwtUtil.validateToken(token)) {
-                log.warn("Token inválido para: {}", path);
+                log.warn("[{}] Token inválido para: {}", requestId, path);
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
 
-            log.info("Token válido para: {}", path);
+            log.info("[{}] Token válido para: {}", requestId, path);
             return chain.filter(exchange);
         };
     }
 
-    private Mono<Void> handleLogin(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> handleLogin(ServerWebExchange exchange, GatewayFilterChain chain, String requestId) {
+        log.info("[{}] Iniciando proceso de login", requestId);
+
         return DataBufferUtils.join(exchange.getRequest().getBody())
                 .flatMap(dataBuffer -> {
                     try {
-                        // Leer body
                         byte[] bytes = new byte[dataBuffer.readableByteCount()];
                         dataBuffer.read(bytes);
                         DataBufferUtils.release(dataBuffer);
 
                         String bodyStr = new String(bytes, StandardCharsets.UTF_8);
-                        log.info("Body recibido: {}", bodyStr);
-
                         LoginRequestDTO loginRequest = objectMapper.readValue(bodyStr, LoginRequestDTO.class);
-                        log.info("Username: {}, Password: {}", loginRequest.getUsername(), "******");
+                        String username = loginRequest.getUsername();
 
-                        // Validar credenciales
-                        return userServiceClient.validateCredentials(loginRequest.getUsername(), loginRequest.getPassword())
+                        log.info("[{}] Intento de login para usuario: {}", requestId, username);
+
+                        // ✅ CORREGIDO: Llamar con 2 parámetros (sin requestId)
+                        return userServiceClient.validateCredentials(username, loginRequest.getPassword())
                                 .flatMap(valid -> {
                                     if (!valid) {
-                                        log.warn("Credenciales inválidas");
+                                        log.warn("[{}] Credenciales inválidas", requestId);
                                         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                                         return exchange.getResponse().setComplete();
                                     }
 
-                                    // Obtener usuario
-                                    return userServiceClient.getUserByUsername(loginRequest.getUsername())
+                                    log.info("[{}] Credenciales válidas", requestId);
+
+                                    // ✅ CORREGIDO: Llamar con 1 parámetro (sin requestId)
+                                    return userServiceClient.getUserByUsername(username)
                                             .flatMap(user -> {
                                                 try {
-                                                    // Generar token
-                                                    String token = jwtUtil.generateToken(user.getUsername(), user.getRoles());
-                                                    log.info("Token generado para: {}", user.getUsername());
+                                                    log.info("[{}] Usuario: {}, Roles: {}", requestId, user.getUsername(), user.getRoles());
 
-                                                    // Construir respuesta
+                                                    String token = jwtUtil.generateToken(user.getUsername(), user.getRoles());
+                                                    log.info("[{}] Token generado", requestId);
+
                                                     LoginResponseDTO response = LoginResponseDTO.builder()
                                                             .token(token)
                                                             .type("Bearer")
@@ -124,7 +128,6 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                                                             .roles(user.getRoles())
                                                             .build();
 
-                                                    // Enviar respuesta
                                                     String jsonResponse = objectMapper.writeValueAsString(response);
                                                     DataBuffer buffer = exchange.getResponse()
                                                             .bufferFactory()
@@ -133,10 +136,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                                                     exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
                                                     exchange.getResponse().setStatusCode(HttpStatus.OK);
 
+                                                    log.info("[{}] Login exitoso", requestId);
                                                     return exchange.getResponse().writeWith(Mono.just(buffer));
 
                                                 } catch (JsonProcessingException e) {
-                                                    log.error("Error serializando respuesta: {}", e.getMessage(), e);
+                                                    log.error("[{}] Error serializando: {}", requestId, e.getMessage());
                                                     exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                                                     return exchange.getResponse().setComplete();
                                                 }
@@ -144,7 +148,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                                 });
 
                     } catch (Exception e) {
-                        log.error("Error en login: {}", e.getMessage(), e);
+                        log.error("[{}] Error en login: {}", requestId, e.getMessage());
                         exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
                         return exchange.getResponse().setComplete();
                     }
