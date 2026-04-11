@@ -1,33 +1,23 @@
-HELP.md
+# Compiled files
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+*.class
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# IDE files
+.idea/
 *.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+.settings/
+.project
+.classpath
 .vscode/
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# System files
+Thumbs.db
+
+# Application specific
+application-local.yml
+application-dev.yml

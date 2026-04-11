@@ -2,6 +2,7 @@ package pe.agro.userservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pe.agro.userservice.dto.UserRequestDTO;
 import pe.agro.userservice.dto.UserResponseDTO;
@@ -21,6 +22,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Mono<UserResponseDTO> save(UserRequestDTO request) {
@@ -30,7 +32,8 @@ public class UserServiceImpl implements UserService {
                 .then(generateUsername(request.getFirstName(), request.getLastName()))
                 .flatMap(username -> {
                     String defaultPassword = "agroapp123";
-                    var user = userMapper.toEntity(request, username, defaultPassword);
+                    String encodedPassword = passwordEncoder.encode(defaultPassword);
+                    var user = userMapper.toEntity(request, username, encodedPassword);
                     return userRepository.save(user);
                 })
                 .map(userMapper::toResponseDTO)
@@ -170,7 +173,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<Void> changePassword(Long id, String newPassword) {
         log.info("Changing password for user: {}", id);
-        return userRepository.changePassword(id, newPassword).then();
+        return userRepository.changePassword(id, passwordEncoder.encode(newPassword)).then();
     }
 
     @Override
@@ -214,6 +217,14 @@ public class UserServiceImpl implements UserService {
                     return userRepository.save(user);
                 })
                 .map(userMapper::toResponseDTO);
+    }
+
+    @Override
+    public Mono<Boolean> validateCredentials(String username, String password) {
+        log.info("Validating credentials for user: {}", username);
+        return userRepository.findByUsername(username)
+                .map(user -> passwordEncoder.matches(password, user.getPassword()))
+                .defaultIfEmpty(false);
     }
 
     private Mono<Void> validateUniqueConstraints(UserRequestDTO request) {

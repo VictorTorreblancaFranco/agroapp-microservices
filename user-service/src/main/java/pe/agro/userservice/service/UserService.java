@@ -26,4 +26,5 @@ public interface UserService {
     Mono<Boolean> isEmailAvailable(String email);
     Mono<Boolean> isPhoneAvailable(String phone);
     Mono<UserResponseDTO> changeRole(Long userId, String role);
+    Mono<Boolean> validateCredentials(String username, String password);
 }

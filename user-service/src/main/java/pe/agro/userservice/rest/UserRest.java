@@ -11,8 +11,6 @@ import pe.agro.userservice.service.UserService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -96,5 +94,11 @@ public class UserRest {
     @ResponseStatus(HttpStatus.OK)
     public Mono<UserResponseDTO> changeRole(@PathVariable Long id, @RequestParam String role) {
         return userService.changeRole(id, role);
+    }
+
+    @GetMapping("/validate")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Boolean> validateCredentials(@RequestParam String username, @RequestParam String password) {
+        return userService.validateCredentials(username, password);
     }
 }

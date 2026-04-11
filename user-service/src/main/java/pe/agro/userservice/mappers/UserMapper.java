@@ -11,11 +11,7 @@ import java.util.UUID;
 @Component
 public class UserMapper {
 
-    public User toEntity(UserRequestDTO request, String username, String plainPassword) {
-        if (request == null) {
-            return null;
-        }
-
+    public User toEntity(UserRequestDTO request, String username, String encodedPassword) {
         return User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -24,7 +20,7 @@ public class UserMapper {
                 .documentType(request.getDocumentType())
                 .documentNumber(request.getDocumentNumber())
                 .email(request.getEmail())
-                .password(plainPassword)
+                .password(encodedPassword)
                 .phone(request.getPhone())
                 .roles("ROLE_USER")
                 .isActive(true)
@@ -38,10 +34,6 @@ public class UserMapper {
     }
 
     public User toEntity(UserUpdateDTO request, User existing) {
-        if (request == null || existing == null) {
-            return existing;
-        }
-
         existing.setFirstName(request.getFirstName());
         existing.setLastName(request.getLastName());
         existing.setBirthDate(request.getBirthDate());
@@ -49,19 +41,13 @@ public class UserMapper {
         existing.setDocumentNumber(request.getDocumentNumber());
         existing.setEmail(request.getEmail());
         existing.setPhone(request.getPhone());
-
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existing.setPassword(request.getPassword());
         }
-
         return existing;
     }
 
     public UserResponseDTO toResponseDTO(User user) {
-        if (user == null) {
-            return null;
-        }
-
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
