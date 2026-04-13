@@ -47,6 +47,25 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  sowing-service:
+    build: ./sowing-service
+    container_name: agroapp-sowing-service
+    environment:
+      SOWING_SERVICE_PORT: 8084
+      DATABASE_URL: r2dbc:postgresql://host.docker.internal:5432/mi_base
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 1234
+      KAFKA_BOOTSTRAP_SERVERS: host.docker.internal:9092
+      LOG_LEVEL: INFO
+    ports:
+      - "8084:8084"
+    depends_on:
+      - user-service
+      - crop-service
+      - farm-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   api-gateway:
     build: ./api-gateway
     container_name: agroapp-gateway
@@ -55,6 +74,7 @@ services:
       USER_SERVICE_URL: http://user-service:8081
       CROP_SERVICE_URL: http://crop-service:8082
       FARM_SERVICE_URL: http://farm-service:8083
+      SOWING_SERVICE_URL: http://sowing-service:8084
       JWT_SECRET: agroAppSuperSecretKey2024With32CharactersOrMore123456
       JWT_EXPIRATION: 86400000
       LOG_LEVEL: INFO
@@ -64,5 +84,6 @@ services:
       - user-service
       - crop-service
       - farm-service
+      - sowing-service
     extra_hosts:
       - "host.docker.internal:host-gateway"
