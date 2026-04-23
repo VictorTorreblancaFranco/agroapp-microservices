@@ -66,6 +66,25 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  weather-service:
+    build: ./weather-service
+    container_name: agroapp-weather-service
+    environment:
+      WEATHER_SERVICE_PORT: 8085
+      DATABASE_URL: r2dbc:postgresql://host.docker.internal:5432/mi_base
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 1234
+      KAFKA_BOOTSTRAP_SERVERS: host.docker.internal:9092
+      LOG_LEVEL: INFO
+    ports:
+      - "8085:8085"
+    depends_on:
+      - user-service
+      - crop-service
+      - farm-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   api-gateway:
     build: ./api-gateway
     container_name: agroapp-gateway
@@ -75,6 +94,7 @@ services:
       CROP_SERVICE_URL: http://crop-service:8082
       FARM_SERVICE_URL: http://farm-service:8083
       SOWING_SERVICE_URL: http://sowing-service:8084
+      WEATHER_SERVICE_URL: http://weather-service:8085
       JWT_SECRET: agroAppSuperSecretKey2024With32CharactersOrMore123456
       JWT_EXPIRATION: 86400000
       LOG_LEVEL: INFO
@@ -85,5 +105,6 @@ services:
       - crop-service
       - farm-service
       - sowing-service
+      - weather-service
     extra_hosts:
       - "host.docker.internal:host-gateway"
